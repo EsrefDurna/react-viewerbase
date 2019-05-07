@@ -7,7 +7,12 @@ import url from 'rollup-plugin-url'
 import svgr from '@svgr/rollup'
 import pkg from './package.json'
 // Deal with https://github.com/rollup/rollup-plugin-commonjs/issues/297
-import builtins from 'rollup-plugin-node-builtins';
+import builtins from 'rollup-plugin-node-builtins'
+
+const globals = {
+  react: 'React',
+  'react-dom': 'ReactDOM',
+}
 
 export default {
   input: 'src/index.js',
@@ -18,33 +23,38 @@ export default {
       name: 'react-viewerbase',
       sourcemap: true,
       exports: 'named',
-      globals: {
-        'react': 'React',
-        'react-dom': 'ReactDOM'
-      }
+      globals,
     },
     {
       file: pkg.module,
       format: 'es',
-      sourcemap: true
-    }
+      sourcemap: true,
+      globals,
+    },
   ],
   plugins: [
     builtins(),
     external(),
     postcss({
-      modules: false
+      modules: false,
     }),
     url(),
     svgr(),
     babel({
       exclude: 'node_modules/**',
-      plugins: [ '@babel/external-helpers' ],
-      externalHelpers: true,
-      runtimeHelpers: true
+      runtimeHelpers: true,
     }),
-    resolve(),
-    commonjs()
+    resolve({
+      browser: true,
+    }),
+    commonjs({
+      // https://github.com/airbnb/react-dates/issues/1183#issuecomment-392073823
+      namedExports: {
+        'node_modules/react-dates/index.js': [
+          'DateRangePicker',
+          'isInclusivelyBeforeDay',
+        ],
+      },
+    }),
   ],
-  external: ['cornerstone-core', 'cornerstone-math', 'cornerstone-tools', 'cornerstone-wado-image-loader', 'dicom-parser', 'hammerjs']
 }
